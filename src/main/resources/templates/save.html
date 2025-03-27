@@ -1,16 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html> <!-- HTML5 문서임을 선언 -->
+<html lang="en"> <!-- HTML 문서 시작, 언어는 영어로 설정 -->
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="UTF-8"> <!-- 문자 인코딩을 UTF-8로 설정 -->
+    <title>Title</title> <!-- 페이지 제목: "Title" (변경되지 않은 기본값) -->
 </head>
-<body>
-<form action="/save" method="post">
-    제목: <input type="text" name="boardTitle"><br>
-    작성자: <input type="text" name="boardWriter"><br>
-    비밀번호: <input type="text" name="boardPass"><br>
-    내용: <input type="text" name="boardContents"><br>
-    <input type="submit" value="작성"><br>
+<body> <!-- 페이지 본문 시작 -->
+<form action="/save" method="post"> <!-- 게시글 작성 데이터를 서버로 전송하는 폼 -->
+    <!-- action="/save": 데이터가 "/save" 경로로 POST 요청으로 전송 -->
+    <!-- method="post": HTTP POST 메서드 사용 -->
+    제목: <input type="text" name="boardTitle"><br> <!-- 제목 입력 필드 -->
+    <!-- name="boardTitle": 입력값이 BoardDTO의 boardTitle 필드에 매핑 -->
+    작성자: <input type="text" name="boardWriter"><br> <!-- 작성자 입력 필드 -->
+    <!-- name="boardWriter": 입력값이 BoardDTO의 boardWriter 필드에 매핑 -->
+    비밀번호: <input type="text" name="boardPass"><br> <!-- 비밀번호 입력 필드 -->
+    <!-- name="boardPass": 입력값이 BoardDTO의 boardPass 필드에 매핑 -->
+    내용: <input type="text" name="boardContents"><br> <!-- 내용 입력 필드 -->
+    <!-- name="boardContents": 입력값이 BoardDTO의 boardContents 필드에 매핑 -->
+    <input type="submit" value="작성"><br> <!-- 제출 버튼: 클릭 시 폼 데이터 전송 -->
+    <!-- value="작성": 버튼에 표시될 텍스트 -->
 </form>
 </body>
 </html>

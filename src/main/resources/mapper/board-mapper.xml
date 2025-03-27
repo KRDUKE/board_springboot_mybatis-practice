@@ -1,14 +1,58 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?> <!-- XML 문서 선언: 버전 1.0, UTF-8 인코딩 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> <!-- MyBatis 매퍼 DTD 정의: 문서 구조 규정 -->
 
-<mapper namespace="Board">
+<mapper namespace="Board"> <!-- 매퍼 네임스페이스 정의: "Board"로 호출되는 쿼리 그룹 -->
+    <!-- 새로운 게시글을 데이터베이스에 삽입하는 쿼리 -->
     <insert id="save" parameterType="board" useGeneratedKeys="true" keyProperty="id">
-        insert into board_table(boardTitle, boardWriter, boardPass, boardContents)
-        values(#{boardTitle}, #{boardWriter}, #{boardPass}, #{boardContents})
+        <!-- id: 쿼리 식별자, BoardRepository.save에서 호출 -->
+        <!-- parameterType: BoardDTO 객체를 매개변수로 받음 (별칭 "board"로 등록됨) -->
+        <!-- useGeneratedKeys: 자동 생성된 키(id)를 사용 -->
+        <!-- keyProperty: 생성된 id를 BoardDTO의 id 필드에 매핑 -->
+        insert into board_table(boardTitle, boardWriter, boardPass, boardContents) <!-- board_table에 데이터 삽입 -->
+        values(#{boardTitle}, #{boardWriter}, #{boardPass}, #{boardContents}) <!-- BoardDTO의 필드 값을 바인딩 -->
     </insert>
+
+    <!-- 모든 게시글을 조회하는 쿼리 -->
     <select id="findAll" resultType="board">
+        <!-- id: 쿼리 식별자, BoardRepository.findAll에서 호출 -->
+        <!-- resultType: 결과가 BoardDTO 객체로 매핑됨 -->
         select id, boardTitle, boardWriter, boardHits, date_format(createdAt, "%Y-%m-%d") as createdAt
-        from board_table order by id desc
-        </select>
+        <!-- id, 제목, 작성자, 조회수, 포맷된 작성일을 조회 -->
+        from board_table order by id desc <!-- board_table에서 조회, ID 기준 내림차순 정렬 -->
+    </select>
+
+    <!-- 특정 게시글의 조회수를 증가시키는 쿼리 -->
+    <update id="updateHits" parameterType="Long">
+        <!-- id: 쿼리 식별자, BoardRepository.updateHits에서 호출 -->
+        <!-- parameterType: Long 타입의 id를 매개변수로 받음 -->
+        update board_table set boardHits=boardHits+1 where id=#{id}
+        <!-- board_table의 boardHits를 1 증가, id로 조건 지정 -->
+    </update>
+
+    <!-- 특정 게시글을 ID로 조회하는 쿼리 -->
+    <select id="findById" parameterType="Long" resultType="board">
+        <!-- id: 쿼리 식별자, BoardRepository.findById에서 호출 -->
+        <!-- parameterType: Long 타입의 id를 매개변수로 받음 -->
+        <!-- resultType: 결과가 BoardDTO 객체로 매핑됨 -->
+        select id, boardTitle, boardWriter, boardPass, boardContents, boardHits,
+        date_format(createdAt, "%Y-%m-%d %H:%i:%s") as createdAt, fileAttached
+        <!-- id, 제목, 작성자, 비밀번호, 내용, 조회수, 상세 포맷된 작성일, 파일 첨부 여부를 조회 -->
+        from board_table where id=#{id} <!-- board_table에서 id로 특정 게시글 조회 -->
+    </select>
+
+    <!-- 기존 게시글을 수정하는 쿼리 -->
+    <update id="update">
+        <!-- id: 쿼리 식별자, BoardRepository.update에서 호출 -->
+        <!-- parameterType 생략: BoardDTO 객체가 기본적으로 매개변수로 전달됨 -->
+        update board_table set boardTitle=#{boardTitle}, boardContents=#{boardContents} where id=#{id}
+        <!-- board_table의 제목과 내용을 업데이트, id로 조건 지정 -->
+    </update>
+
+    <!-- 특정 게시글을 삭제하는 쿼리 -->
+    <delete id="delete" parameterType="Long">
+        <!-- id: 쿼리 식별자, BoardRepository.delete에서 호출 -->
+        <!-- parameterType: Long 타입의 id를 매개변수로 받음 -->
+        delete from board_table where id=#{id} <!-- board_table에서 id로 특정 게시글 삭제 -->
+    </delete>
 </mapper>

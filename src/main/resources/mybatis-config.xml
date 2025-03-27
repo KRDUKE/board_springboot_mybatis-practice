@@ -1,8 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?> <!-- XML 문서 선언: 버전 1.0, UTF-8 인코딩 -->
 <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
-<configuration>
-    <typeAliases>
+        "http://mybatis.org/dtd/mybatis-3-config.dtd"> <!-- MyBatis 설정 DTD 정의: 문서 구조 규정 -->
+
+<configuration> <!-- MyBatis 전역 설정의 루트 요소 -->
+    <typeAliases> <!-- 타입 별칭 설정 섹션: 클래스 이름에 별칭을 부여 -->
+        <!-- BoardDTO 클래스에 "board"라는 별칭을 정의 -->
         <typeAlias type="com.dukefirstboard.board.dto.BoardDTO" alias="board"></typeAlias>
+        <!-- type: 별칭을 지정할 클래스의 전체 경로 -->
+        <!-- alias: 매퍼 XML에서 사용할 짧은 이름 -->
     </typeAliases>
 </configuration>

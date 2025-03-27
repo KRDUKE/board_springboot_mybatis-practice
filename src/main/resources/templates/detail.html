@@ -1,0 +1,62 @@
+<!DOCTYPE html> <!-- HTML5 문서임을 선언 -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"> <!-- HTML 문서 시작, 언어는 영어, Thymeleaf 네임스페이스 정의 -->
+<head>
+    <meta charset="UTF-8"> <!-- 문자 인코딩을 UTF-8로 설정 -->
+    <title>detail</title> <!-- 페이지 제목: "detail" (상세 페이지임을 나타냄) -->
+    <style> <!-- 내부 CSS 스타일 정의 -->
+    table, tr, td, th { /* 테이블, 행, 셀, 헤더에 적용 */
+        border: 1px solid black; /* 1px 실선 검정 테두리 */
+        border-collapse: collapse; /* 테두리 중복 제거로 깔끔한 테이블 모양 */
+    }
+    th, td { /* 헤더와 셀에 적용 */
+        padding: 10px; /* 내부 여백 10px로 셀 내용과 테두리 간격 확보 */
+    }
+    </style>
+</head>
+<body> <!-- 페이지 본문 시작 -->
+<table> <!-- 게시글 상세 정보를 표시하는 테이블 -->
+    <tr> <!-- 행: ID 표시 -->
+        <th>id</th> <!-- 헤더: "id" 라벨 -->
+        <td th:text="${board.id}"></td> <!-- 셀: Thymeleaf로 BoardDTO의 id 값을 동적 출력 -->
+    </tr>
+    <tr> <!-- 행: 제목 표시 -->
+        <th>title</th> <!-- 헤더: "title" 라벨 -->
+        <td th:text="${board.boardTitle}"></td> <!-- 셀: BoardDTO의 boardTitle 값을 출력 -->
+    </tr>
+    <tr> <!-- 행: 작성자 표시 -->
+        <th>writer</th> <!-- 헤더: "writer" 라벨 -->
+        <td th:text="${board.boardWriter}"></td> <!-- 셀: BoardDTO의 boardWriter 값을 출력 -->
+    </tr>
+    <tr> <!-- 행: 작성일 표시 -->
+        <th>date</th> <!-- 헤더: "date" 라벨 -->
+        <td th:text="${board.createdAt}"></td> <!-- 셀: BoardDTO의 createdAt 값을 출력 -->
+    </tr>
+    <tr> <!-- 행: 조회수 표시 -->
+        <th>hits</th> <!-- 헤더: "hits" 라벨 -->
+        <td th:text="${board.boardHits}"></td> <!-- 셀: BoardDTO의 boardHits 값을 출력 -->
+    </tr>
+    <tr> <!-- 행: 내용 표시 -->
+        <th>contents</th> <!-- 헤더: "contents" 라벨 -->
+        <td th:text="${board.boardContents}"></td> <!-- 셀: BoardDTO의 boardContents 값을 출력 -->
+    </tr>
+</table>
+<!-- 버튼 3개: 목록, 수정, 삭제 기능 호출 -->
+<button onclick="listReq()">목록</button> <!-- "목록" 버튼: 클릭 시 listReq 함수 실행 -->
+<button onclick="updateReq()">수정</button> <!-- "수정" 버튼: 클릭 시 updateReq 함수 실행 -->
+<button onclick="deleteReq()">삭제</button> <!-- "삭제" 버튼: 클릭 시 deleteReq 함수 실행 -->
+</body>
+<script th:inline="javascript"> <!-- Thymeleaf 인라인 JavaScript 정의 -->
+// 목록 페이지로 이동하는 함수
+const listReq = () => {
+    location.href = "/list"; // 브라우저를 "/list" URL로 리다이렉트 (게시글 목록 페이지로 이동)
+}
+// 수정 페이지로 이동하는 함수
+const updateReq = () => {
+    location.href = `/update/[[${board.id}]]`; // Thymeleaf로 board.id를 동적으로 삽입, "/update/{id}"로 이동
+}
+// 삭제 요청을 보내는 함수
+const deleteReq = () => {
+    location.href = `/delete/[[${board.id}]]`; // Thymeleaf로 board.id를 동적으로 삽입, "/delete/{id}"로 이동
+}
+</script>
+</html>
