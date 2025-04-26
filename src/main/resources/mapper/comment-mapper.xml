@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Comment">
+    <insert id="save" parameterType="CommentDTO" useGeneratedKeys="true" keyProperty="id">
+        insert into comment_table(board_id, user_id, parent_id, content, nickname)
+        values(#{boardId}, #{userId}, #{parentId}, #{content}, #{nickname})
+    </insert>
+
+    <select id="findByBoardId" parameterType="Long" resultType="com.dukefirstboard.board.dto.CommentDTO">
+        select id, board_id, user_id, parent_id, content, nickname, date_format(createdAt, "%Y-%m-%d %H:%i:%s") as createdAt
+        from comment_table where board_id = #{boardId}
+        order by parent_id asc, created_at asc
+    </select>
+</mapper>

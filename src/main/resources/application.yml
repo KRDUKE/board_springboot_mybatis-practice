@@ -24,3 +24,5 @@ mybatis:
   config-location: classpath:mybatis-config.xml
   # MyBatis 설정 파일의 위치
   # - mybatis-config.xml: MyBatis 전역 설정 파일 (선택적, 별도로 정의 필요)
+  type-aliases-package: com.dukefirstboard.board.dto
+  # application.yml

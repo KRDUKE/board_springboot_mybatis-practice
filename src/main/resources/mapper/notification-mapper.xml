@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Notification">
+    <insert id="save" parameterType="notificationDTO">
+        insert into notification_table(user_id, board_id, comment_id, message)
+        values(#{userId}, #{boardId}, #{commentId}, #{message})
+    </insert>
+
+    <select id="findByUserId" parameterType="Long" resultType="notificationDTO">
+        select id, user_id, board_id, comment_id, message, is_read, date_format(createdAt, "%Y-%m-%d %H:%i:%s") as createdAt
+        from notification_table where user_id = #{userId}
+        order by created_at desc
+    </select>
+
+    <select id="findById" parameterType="Long" resultType="notificationDTO">
+        select id, user_id, board_id, comment_id, message, is_read, date_format(createdAt, "%Y-%m-%d %H:%i:%s") as createdAt
+        from notification_table where id = #{id}
+    </select>
+
+    <update id="markAsRead" parameterType="Long">
+        update notification_table set is_read = 1 where id = #{id}
+    </update>
+
+    <select id="findUserByNickname" parameterType="string" resultType="userDTO">
+        select * from user_table where nickname = #{nickname}
+    </select>
+</mapper>

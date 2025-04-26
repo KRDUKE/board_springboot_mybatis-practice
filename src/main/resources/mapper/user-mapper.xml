@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="User">
+    <insert id="save" parameterType="userDTO">
+        insert into user_table(email, password, nickname)
+        values(#{email}, #{password}, #{nickname})
+    </insert>
+
+    <select id="findByEmail" parameterType="string" resultType="userDTO">
+        select * from user_table where email = #{email}
+    </select>
+
+    <select id="findByNickname" parameterType="string" resultType="UserDTO">
+        SELECT id, email, password, nickname, created_at AS createdAt
+        FROM user_table
+        WHERE nickname = #{nickname}
+    </select>
+</mapper>

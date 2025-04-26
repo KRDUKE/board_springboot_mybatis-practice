@@ -1,78 +1,166 @@
-package com.dukefirstboard.board.controller; // 패키지 선언: 이 클래스가 속한 경로
+package com.dukefirstboard.board.controller;
 
-import com.dukefirstboard.board.dto.BoardDTO; // 게시글 데이터를 담는 DTO 클래스 임포트
-import com.dukefirstboard.board.service.BoardService; // 게시글 비즈니스 로직을 처리하는 서비스 클래스 임포트
-import lombok.RequiredArgsConstructor; // Lombok: final 필드에 대한 생성자를 자동 생성
-import org.springframework.stereotype.Controller; // Spring MVC 컨트롤러임을 선언
-import org.springframework.ui.Model; // 뷰에 데이터를 전달하기 위한 Model 객체 임포트
-import org.springframework.web.bind.annotation.GetMapping; // GET 요청을 매핑하기 위한 애너테이션
-import org.springframework.web.bind.annotation.PathVariable; // URL 경로 변수 처리를 위한 애너테이션
-import org.springframework.web.bind.annotation.PostMapping; // POST 요청을 매핑하기 위한 애너테이션
+import com.dukefirstboard.board.dto.*;
+import com.dukefirstboard.board.service.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List; // List 컬렉션 사용을 위한 임포트
+import java.io.IOException;
+import java.util.List;
 
-@Controller // 이 클래스가 Spring MVC의 컨트롤러로 동작하도록 지정
-@RequiredArgsConstructor // final 필드(boardService)에 대한 생성자를 자동 생성
+@Controller
+@RequiredArgsConstructor
 public class BoardController {
-    private final BoardService boardService; // 게시글 관련 비즈니스 로직을 처리하는 서비스 객체 (의존성 주입)
+    private final BoardService boardService;
+    private final CategoryService categoryService;
+    private final CommentService commentService;
+    private final RecommendService recommendService;
+    private final NotificationService notificationService;
 
-    // 게시글 작성 페이지로 이동하는 GET 요청 처리
     @GetMapping("/save")
-    public String save() {
-        return "save"; // "save"라는 이름의 뷰(HTML 템플릿)를 반환하여 작성 폼을 표시
+    public String save(Model model) {
+        model.addAttribute("categories", categoryService.findAll());
+        return "save";
     }
 
-    // 게시글 작성 데이터를 받아 저장하고 목록 페이지로 리다이렉트하는 POST 요청 처리
     @PostMapping("/save")
-    public String save(BoardDTO boardDTO) { // BoardDTO 객체로 폼 데이터를 자동 바인딩
-        System.out.println("boardDTO = " + boardDTO); // 콘솔에 받은 데이터 출력 (디버깅용)
-        boardService.save(boardDTO); // 서비스 계층을 통해 게시글 데이터를 저장
-        return "redirect:/list"; // 저장 후 "/list"로 리다이렉트하여 게시글 목록 페이지로 이동
+    public String save(@ModelAttribute BoardDTO boardDTO, Authentication authentication) throws IOException {
+        String nickname = authentication.getName();
+        boardDTO.setBoardWriter(nickname);
+        boardService.save(boardDTO);
+        return "redirect:/list";
     }
 
-    // 모든 게시글을 조회하여 목록 페이지로 전달하는 GET 요청 처리
     @GetMapping("/list")
-    public String findAll(Model model) { // Model 객체로 뷰에 데이터 전달
-        List<BoardDTO> boardDTOList = boardService.findAll(); // 서비스 계층에서 모든 게시글 목록 조회
-        model.addAttribute("boardList", boardDTOList); // "boardList"라는 이름으로 뷰에 데이터 전달
-        System.out.println("boardDTOList" + boardDTOList); // 콘솔에 조회된 목록 출력 (디버깅용)
-        return "list"; // "list"라는 이름의 뷰(목록 페이지)를 반환
+    public String findAll(Model model,
+                          @RequestParam(value = "page", defaultValue = "1") int page,
+                          @RequestParam(value = "categoryId", required = false) Long categoryId,
+                          @RequestParam(value = "keyword", required = false) String keyword) {
+        PageDTO pageDTO = boardService.findAll(page, categoryId, keyword);
+        model.addAttribute("boardList", pageDTO.getBoardList());
+        model.addAttribute("page", pageDTO);
+        model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute("selectedCategory", categoryId);
+        model.addAttribute("keyword", keyword);
+        return "list";
     }
 
-    // 특정 게시글의 상세 내용을 조회하여 상세 페이지로 전달하는 GET 요청 처리
-    @GetMapping("/{id}") // URL에서 {id}를 경로 변수로 받음
-    public String findById(@PathVariable("id") Long id, Model model) { // 경로 변수 id와 Model 객체 주입
-        // 조회수 처리
-        boardService.updateHits(id); // 서비스 계층에서 해당 게시글의 조회수 증가
-
-        // 상세 내용 가져오기
-        BoardDTO boardDTO = boardService.findById(id); // 서비스 계층에서 특정 게시글 조회
-        model.addAttribute("board", boardDTO); // "board"라는 이름으로 뷰에 데이터 전달
-        System.out.println("boardDTO = " + boardDTO); // 콘솔에 조회된 게시글 출력 (디버깅용)
-        return "detail"; // "detail"라는 이름의 뷰(상세 페이지)를 반환
+    @GetMapping("/{id}")
+    public String findById(@PathVariable("id") Long id, Model model, Authentication authentication) {
+        boardService.updateHits(id);
+        BoardDTO boardDTO = boardService.findById(id);
+        model.addAttribute("board", boardDTO);
+        if (boardDTO.getFileAttached() == 1) {
+            List<BoardFileDTO> boardFileDTOList = boardService.findFile(id);
+            model.addAttribute("boardFileList", boardFileDTOList);
+        }
+        List<CommentDTO> comments = commentService.findByBoardId(id);
+        model.addAttribute("comments", comments);
+        String userNickname = authentication != null ? authentication.getName() : null;
+        if (userNickname != null) {
+            UserDTO user = boardService.findUserByNickname(userNickname);
+            RecommendDTO recommend = recommendService.getRecommendation(id, user.getId());
+            model.addAttribute("recommend", recommend);
+        }
+        return "detail";
     }
 
-    // 게시글 수정 페이지로 이동하는 GET 요청 처리
-    @GetMapping("/update/{id}") // URL에서 {id}를 경로 변수로 받음
-    public String update(@PathVariable("id") Long id, Model model) { // 경로 변수 id와 Model 객체 주입
-        BoardDTO boardDTO = boardService.findById(id); // 서비스 계층에서 수정할 게시글 조회
-        model.addAttribute("board", boardDTO); // "board"라는 이름으로 뷰에 데이터 전달
-        return "update"; // "update"라는 이름의 뷰(수정 폼 페이지)를 반환
+    @GetMapping("/update/{id}")
+    public String update(@PathVariable("id") Long id, Model model) {
+        BoardDTO boardDTO = boardService.findById(id);
+        model.addAttribute("board", boardDTO);
+        model.addAttribute("categories", categoryService.findAll());
+        return "update";
     }
 
-    // 수정된 게시글 데이터를 저장하고 상세 페이지로 이동하는 POST 요청 처리
-    @PostMapping("/update/{id}") // URL에서 {id}를 경로 변수로 받음
-    public String update(BoardDTO boardDTO, Model model) { // 수정된 BoardDTO와 Model 객체 주입
-        boardService.update(boardDTO); // 서비스 계층에서 게시글 업데이트
-        BoardDTO dto = boardService.findById(boardDTO.getId()); // 업데이트된 게시글 다시 조회
-        model.addAttribute("board", dto); // "board"라는 이름으로 뷰에 데이터 전달
-        return "detail"; // "detail" 뷰로 이동하여 수정된 상세 내용 표시
+    @PostMapping("/update/{id}")
+    public String update(@ModelAttribute BoardDTO boardDTO, Model model) {
+        // [NEW] 서버 측 비밀번호 검증
+        BoardDTO existingBoard = boardService.findById(boardDTO.getId());
+        if (!existingBoard.getBoardPass().equals(boardDTO.getBoardPass())) {
+            model.addAttribute("error", "비밀번호가 틀립니다!");
+            model.addAttribute("board", existingBoard);
+            return "update";
+        }
+        boardService.update(boardDTO);
+        BoardDTO dto = boardService.findById(boardDTO.getId());
+        model.addAttribute("board", dto);
+        return "detail";
     }
 
-    // 특정 게시글을 삭제하고 목록 페이지로 리다이렉트하는 GET 요청 처리
-    @GetMapping("/delete/{id}") // URL에서 {id}를 경로 변수로 받음
-    public String delete(@PathVariable("id") Long id) { // 경로 변수 id 주입
-        boardService.delete(id); // 서비스 계층에서 해당 게시글 삭제
-        return "redirect:/list"; // 삭제 후 "/list"로 리다이렉트하여 목록 페이지로 이동
+    @GetMapping("/delete/{id}")
+    public String delete(@PathVariable("id") Long id) {
+        boardService.delete(id);
+        return "redirect:/list";
+    }
+
+    @PostMapping("/comment")
+    public String saveComment(@ModelAttribute CommentDTO commentDTO, Authentication authentication) {
+        String nickname = authentication.getName();
+        UserDTO user = boardService.findUserByNickname(nickname);
+        commentDTO.setUserId(user.getId());
+        commentDTO.setNickname(nickname);
+        commentService.save(commentDTO);
+        BoardDTO board = boardService.findById(commentDTO.getBoardId());
+        if (!board.getBoardWriter().equals(nickname)) {
+            NotificationDTO notification = new NotificationDTO();
+            notification.setUserId(board.getUserId());
+            notification.setBoardId(board.getId());
+            notification.setCommentId(commentDTO.getId());
+            notification.setMessage(nickname + "님이 댓글을 달았습니다.");
+            notificationService.save(notification);
+        }
+        return "redirect:/" + commentDTO.getBoardId();
+    }
+
+    @PostMapping("/recommend")
+    public String recommend(@RequestParam("boardId") Long boardId, @RequestParam("type") String type, Authentication authentication) {
+        String nickname = authentication.getName();
+        UserDTO user = boardService.findUserByNickname(nickname);
+        RecommendDTO recommendDTO = new RecommendDTO();
+        recommendDTO.setBoardId(boardId);
+        recommendDTO.setUserId(user.getId());
+        recommendDTO.setType(type);
+        recommendService.save(recommendDTO);
+        return "redirect:/" + boardId;
+    }
+
+    // [NEW] 파일 다운로드
+    @GetMapping("/download/{fileName}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable("fileName") String fileName) throws IOException {
+        String filePath = "C:/Users/DUKE/Downloads/testsave/" + fileName;
+        Resource resource = new FileSystemResource(filePath);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .body(resource);
+    }
+
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+
+    @GetMapping("/signup")
+    public String signup(Model model) {
+        model.addAttribute("userDTO", new UserDTO());
+        return "signup";
+    }
+
+    @PostMapping("/signup")
+    public String signup(@ModelAttribute UserDTO userDTO, Model model) {
+        try {
+            boardService.saveUser(userDTO); // 사용자 정보를 저장하는 서비스 메서드 호출
+            return "redirect:/login"; // 회원가입 성공 시 로그인 페이지로 리다이렉트
+        } catch (Exception e) {
+            model.addAttribute("error", "회원가입에 실패했습니다. 다시 시도해주세요.");
+            return "signup"; // 실패 시 회원가입 페이지로 다시 이동
+        }
     }
 }

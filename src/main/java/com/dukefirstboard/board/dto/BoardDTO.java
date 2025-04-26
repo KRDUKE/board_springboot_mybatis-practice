@@ -3,6 +3,10 @@ package com.dukefirstboard.board.dto; // 패키지 선언: 이 클래스가 속�
 import lombok.Getter; // Lombok: getter 메서드를 자동 생성하기 위한 애너테이션 임포트
 import lombok.Setter; // Lombok: setter 메서드를 자동 생성하기 위한 애너테이션 임포트
 import lombok.ToString; // Lombok: toString 메서드를 자동 생성하기 위한 애너테이션 임포트
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
 
 @Getter // 모든 필드에 대해 getter 메서드를 자동 생성
 @Setter // 모든 필드에 대해 setter 메서드를 자동 생성
@@ -21,4 +25,19 @@ public class BoardDTO { // 게시글 데이터를 담는 데이터 전송 객체
     private int boardHits; // 조회수: 게시글이 조회된 횟수 (기본값은 보통 0)
 
     private String createdAt; // 작성시간: 게시글이 작성된 날짜와 시간 (문자열로 저장, 예: "2023-10-01 12:00")
+    private int fileAttached;
+    private List<MultipartFile> boardFile;
+    private Long categoryId;
+    private Long userId;
+    private String spotifyTrackId;
+
+    // [NEW] Spotify URL에서 트랙 ID 추출
+    public void setSpotifyTrackUrl(String spotifyTrackUrl) {
+        if (spotifyTrackUrl != null && spotifyTrackUrl.contains("track/")) {
+            this.spotifyTrackId = spotifyTrackUrl.substring(spotifyTrackUrl.indexOf("track/") + 6);
+            if (this.spotifyTrackId.contains("?")) {
+                this.spotifyTrackId = this.spotifyTrackId.substring(0, this.spotifyTrackId.indexOf("?"));
+            }
+        }
+    }
 }

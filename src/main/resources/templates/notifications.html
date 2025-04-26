@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>알림</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="nav-bar">
+  <a href="/list">글목록</a>
+  <a href="/save">글작성</a>
+  <a href="/logout">로그아웃</a>
+</div>
+
+<h2>알림 목록</h2>
+<div class="notification-list">
+  <div th:each="notification: ${notifications}" th:class="${notification.isRead == 0} ? 'notification unread' : 'notification read'">
+    <a th:href="@{|/notification/read/${notification.id}|}">
+      <p th:text="${notification.message}"></p>
+      <p th:text="${notification.createdAt}"></p>
+    </a>
+  </div>
+</div>
+</body>
+</html>

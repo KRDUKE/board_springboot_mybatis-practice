@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Recommend">
+    <insert id="save" parameterType="RecommendDTO">
+        insert into recommend_table(board_id, user_id, type)
+        values(#{boardId}, #{userId}, #{type})
+            on duplicate key update type = #{type}
+    </insert>
+
+    <select id="findByBoardIdAndUserId" parameterType="RecommendDTO" resultType="recommendDTO">
+        select * from recommend_table where board_id = #{boardId} and user_id = #{userId}
+    </select>
+</mapper>

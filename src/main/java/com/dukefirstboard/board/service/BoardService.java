@@ -1,44 +1,115 @@
-package com.dukefirstboard.board.service; // 패키지 선언: 이 클래스가 속한 경로 (서비스 패키지)
+package com.dukefirstboard.board.service;
 
-import com.dukefirstboard.board.dto.BoardDTO; // 게시글 데이터를 담는 DTO 클래스 임포트
-import com.dukefirstboard.board.repository.BoardRepository; // 데이터베이스 작업을 수행하는 리포지토리 클래스 임포트
-import lombok.RequiredArgsConstructor; // Lombok: final 필드에 대한 생성자를 자동 생성하기 위한 애너테이션 임포트
-import org.springframework.stereotype.Service; // Spring의 서비스 컴포넌트임을 선언하는 애너테이션 임포트
+import com.dukefirstboard.board.dto.*;
+import com.dukefirstboard.board.repository.BoardRepository;
+import com.dukefirstboard.board.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List; // List 컬렉션 사용을 위한 임포트
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-@Service // 이 클래스가 Spring의 서비스 계층 컴포넌트임을 지정
-@RequiredArgsConstructor // final 필드(boardRepository)에 대한 생성자를 자동 생성
-public class BoardService { // 게시글 관련 비즈니스 로직을 처리하는 서비스 클래스
-    private final BoardRepository boardRepository; // 데이터베이스 작업을 수행하는 리포지토리 객체 (의존성 주입)
+@Service
+@RequiredArgsConstructor
+public class BoardService {
+    private final BoardRepository boardRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    // 새로운 게시글을 저장하는 메서드
-    public void save(BoardDTO boardDTO) { // BoardDTO 객체를 매개변수로 받아 저장 요청
-        boardRepository.save(boardDTO); // 리포지토리 계층에 저장 작업 위임
+    public void save(BoardDTO boardDTO) throws IOException {
+        UserDTO user = userRepository.findByEmail(boardDTO.getBoardWriter());
+        boardDTO.setUserId(user.getId());
+        if (boardDTO.getBoardFile() == null || boardDTO.getBoardFile().isEmpty()) {
+            boardDTO.setFileAttached(0);
+            boardRepository.save(boardDTO);
+        } else {
+            boardDTO.setFileAttached(1);
+            BoardDTO savedBoard = boardRepository.save(boardDTO);
+            for (MultipartFile boardFile : boardDTO.getBoardFile()) {
+                String originalFileName = boardFile.getOriginalFilename();
+                String storedFileName = System.currentTimeMillis() + "-" + originalFileName;
+                String savePath = "C:/Users/DUKE/Downloads/testsave/" + storedFileName;
+                boardFile.transferTo(new File(savePath));
+                BoardFileDTO boardFileDTO = new BoardFileDTO();
+                boardFileDTO.setOriginalFileName(originalFileName);
+                boardFileDTO.setStoredFileName(storedFileName);
+                boardFileDTO.setBoardId(savedBoard.getId());
+                boardRepository.saveFile(boardFileDTO);
+            }
+        }
     }
 
-    // 모든 게시글을 조회하여 리스트로 반환하는 메서드
-    public List<BoardDTO> findAll() { // 반환 타입은 BoardDTO 객체의 리스트
-        return boardRepository.findAll(); // 리포지토리 계층에서 모든 게시글 조회 후 반환
+    public List<BoardDTO> findAll() {
+        return boardRepository.findAll();
     }
 
-    // 특정 게시글의 조회수를 증가시키는 메서드
-    public void updateHits(Long id) { // 게시글 ID를 매개변수로 받아 조회수 업데이트 요청
-        boardRepository.updateHits(id); // 리포지토리 계층에 조회수 증가 작업 위임
+    public void updateHits(Long id) {
+        boardRepository.updateHits(id);
     }
 
-    // 특정 게시글을 ID로 조회하여 반환하는 메서드
-    public BoardDTO findById(Long id) { // 게시글 ID를 매개변수로 받아 단일 게시글 조회
-        return boardRepository.findById(id); // 리포지토리 계층에서 특정 게시글 조회 후 반환
+    public BoardDTO findById(Long id) {
+        return boardRepository.findById(id);
     }
 
-    // 기존 게시글을 수정하는 메서드
-    public void update(BoardDTO boardDTO) { // 수정된 BoardDTO 객체를 매개변수로 받아 업데이트 요청
-        boardRepository.update(boardDTO); // 리포지토리 계층에 수정 작업 위임
+    public void update(BoardDTO boardDTO) {
+        boardRepository.update(boardDTO);
     }
 
-    // 특정 게시글을 삭제하는 메서드
-    public void delete(Long id) { // 게시글 ID를 매개변수로 받아 삭제 요청
-        boardRepository.delete(id); // 리포지토리 계층에 삭제 작업 위임
+    public void delete(Long id) {
+        boardRepository.delete(id);
     }
+
+    public List<BoardFileDTO> findFile(Long id) {
+        return boardRepository.findFile(id);
+    }
+
+    public PageDTO findAll(int page, Long categoryId, String keyword) {
+        int pageSize = 10;
+        int offset = (page - 1) * pageSize;
+        Map<String, Object> params = new HashMap<>();
+        params.put("offset", offset);
+        params.put("pageSize", pageSize);
+        params.put("categoryId", categoryId);
+        params.put("keyword", keyword != null ? "%" + keyword + "%" : null);
+        List<BoardDTO> boardList = boardRepository.findAllWithPaging(params);
+        int totalElements = boardRepository.count(params);
+        int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+        PageDTO pageDTO = new PageDTO();
+        pageDTO.setBoardList(boardList);
+        pageDTO.setCurrentPage(page);
+        pageDTO.setTotalPages(totalPages);
+        pageDTO.setTotalElements(totalElements);
+        return pageDTO;
+    }
+
+    /*public void saveUser(UserDTO userDTO) {
+        // 비밀번호 암호화 (Spring Security 사용 시)
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        userRepository.save(userDTO);
+    }*/
+
+    public void saveUser(UserDTO userDTO) {
+        if (userRepository.findByEmail(userDTO.getEmail()) != null) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+        if (userRepository.findByNickname(userDTO.getNickname()) != null) {
+            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+        }
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        userRepository.save(userDTO);
+    }
+
+    public UserDTO findUserByNickname(String nickname) {
+        return userRepository.findByNickname(nickname);
+    }
+
+
+
+
 }
